@@ -35,6 +35,23 @@ export default async function NotesPage() {
     revalidatePath('/notes');
   }
 
+  async function updateNote(formData: FormData) {
+    'use server';
+    const id = formData.get('id') as string;
+    const title = formData.get('title') as string;
+    const content = formData.get('content') as string;
+    if (!id || !title || !content) return;
+
+    const supabase = await createClient();
+    const { error } = await supabase.from('notes').update({
+      title,
+      content
+    }).eq('id', id);
+
+    if (error) console.error("Note update error:", error);
+    revalidatePath('/notes');
+  }
+
   async function deleteNote(formData: FormData) {
     'use server';
     const id = formData.get('id') as string;
@@ -82,25 +99,46 @@ export default async function NotesPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {notes?.map((note) => (
           <div key={note.id} className="bg-[#111726] border border-gray-800 p-6 rounded-xl flex flex-col justify-between space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-start gap-2">
-                <h3 className="font-bold text-lg text-white">{note.title}</h3>
-                <span className="text-[10px] text-gray-500">
+            <form action={updateNote} className="space-y-3">
+              <input type="hidden" name="id" value={note.id} />
+              
+              <div className="flex justify-between items-center gap-2">
+                <input 
+                  type="text" 
+                  name="title" 
+                  defaultValue={note.title}
+                  required
+                  className="w-full bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-purple-500"
+                />
+                <span className="text-[10px] text-gray-500 whitespace-nowrap">
                   {new Date(note.created_at).toLocaleDateString()}
                 </span>
               </div>
-              <div className="bg-black/40 border border-gray-800/80 p-3 rounded-lg">
-                <p className="text-xs text-gray-300 whitespace-pre-wrap">{note.content}</p>
-              </div>
-            </div>
 
-            <div className="flex justify-end pt-2 border-t border-gray-800/80">
+              <textarea 
+                name="content" 
+                defaultValue={note.content}
+                rows={3}
+                required
+                className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500"
+              ></textarea>
+
+              <div className="flex justify-between items-center pt-2 border-t border-gray-800/80">
+                <SubmitButton 
+                  defaultText="Update Note" 
+                  loadingText="Saving..." 
+                  baseClass="bg-gray-800 hover:bg-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-700 transition-colors text-white"
+                />
+              </div>
+            </form>
+
+            <div className="flex justify-end">
               <form action={deleteNote}>
                 <input type="hidden" name="id" value={note.id} />
                 <SubmitButton 
                   defaultText="Delete Note" 
                   loadingText="..." 
-                  baseClass="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-1.5 bg-red-950/40 rounded-lg border border-red-900/40 transition-colors"
+                  baseClass="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-1 bg-red-950/40 rounded-lg border border-red-900/40 transition-colors"
                 />
               </form>
             </div>
