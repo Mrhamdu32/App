@@ -51,22 +51,29 @@ export default async function ProjectsPage() {
     revalidatePath('/projects');
   }
 
-  async function updateProjectStatus(formData: FormData) {
+  async function updateProject(formData: FormData) {
     'use server';
     const id = formData.get('id') as string;
-    const currentStatus = formData.get('currentStatus') as string;
-    if (!id) return;
+    const title = formData.get('title') as string;
+    const description = formData.get('description') as string;
+    const status = formData.get('status') as string;
+    const target_date = formData.get('target_date') as string;
 
-    const nextStatusMap: Record<string, string> = {
-      planning: 'in_progress',
-      in_progress: 'completed',
-      completed: 'planning'
-    };
-    const newStatus = nextStatusMap[currentStatus] || 'in_progress';
+    if (!id || !title || !title.trim()) return;
 
     const supabase = await createClient();
-    await supabase.from('projects').update({ status: newStatus }).eq('id', id);
+    const updateData: any = {
+      title: title.trim(),
+      description: description ? description.trim() : null,
+      status: status || 'in_progress',
+      target_date: target_date && target_date.trim() !== '' ? target_date : null
+    };
 
+    const { error } = await supabase.from('projects').update(updateData).eq('id', id);
+
+    if (error) {
+      console.error("Project update error:", error.message);
+    }
     revalidatePath('/projects');
   }
 
@@ -76,8 +83,11 @@ export default async function ProjectsPage() {
     if (!id) return;
 
     const supabase = await createClient();
-    await supabase.from('projects').delete().eq('id', id);
+    const { error } = await supabase.from('projects').delete().eq('id', id);
 
+    if (error) {
+      console.error("Project delete error:", error.message);
+    }
     revalidatePath('/projects');
   }
 
@@ -133,36 +143,50 @@ export default async function ProjectsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {projects?.map((project) => (
           <div key={project.id} className="bg-[#111726] border border-gray-800 p-6 rounded-xl flex flex-col justify-between space-y-4">
-            <div className="space-y-3">
-              <div className="flex justify-between items-start gap-2">
-                <h3 className="font-bold text-lg text-white">{project.title}</h3>
-                <form action={updateProjectStatus}>
-                  <input type="hidden" name="id" value={project.id} />
-                  <input type="hidden" name="currentStatus" value={project.status} />
-                  <SubmitButton 
-                    defaultText={project.status.replace('_', ' ')} 
-                    loadingText="..." 
-                    baseClass={`text-[10px] font-semibold px-2.5 py-1 rounded-md uppercase tracking-wider transition-colors cursor-pointer border ${
-                      project.status === 'completed' ? 'bg-green-950/60 text-green-400 border-green-900/50 hover:bg-green-900/40' :
-                      project.status === 'in_progress' ? 'bg-purple-950/60 text-purple-400 border-purple-900/50 hover:bg-purple-900/40' :
-                      'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
-                    }`}
-                  />
-                </form>
+            <form action={updateProject} className="space-y-3">
+              <input type="hidden" name="id" value={project.id} />
+              
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  name="title" 
+                  defaultValue={project.title}
+                  required
+                  className="flex-1 bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white font-bold text-sm focus:outline-none focus:border-purple-500"
+                />
+                <select 
+                  name="status"
+                  defaultValue={project.status}
+                  className="bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs font-semibold uppercase tracking-wider focus:outline-none focus:border-purple-500"
+                >
+                  <option value="in_progress">In Progress</option>
+                  <option value="planning">Planning</option>
+                  <option value="completed">Completed</option>
+                </select>
               </div>
 
-              {project.description && (
-                <div className="bg-black/40 border border-gray-800/80 p-3 rounded-lg">
-                  <p className="text-xs text-gray-300 whitespace-pre-wrap">{project.description}</p>
-                </div>
-              )}
+              <textarea 
+                name="description" 
+                defaultValue={project.description || ''}
+                rows={2}
+                placeholder="Project description..."
+                className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500"
+              ></textarea>
 
-              {project.target_date && (
-                <p className="text-xs text-purple-300">
-                  🎯 Target Deadline: {new Date(project.target_date).toLocaleDateString()}
-                </p>
-              )}
-            </div>
+              <div className="flex justify-between items-center pt-1">
+                <input 
+                  type="date" 
+                  name="target_date" 
+                  defaultValue={project.target_date || ''}
+                  className="bg-black border border-gray-700 rounded-lg px-3 py-1 text-white text-xs focus:outline-none focus:border-purple-500 cursor-pointer [color-scheme:dark]"
+                />
+                <SubmitButton 
+                  defaultText="Update Project" 
+                  loadingText="Saving..." 
+                  baseClass="bg-gray-800 hover:bg-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-700 transition-colors text-white"
+                />
+              </div>
+            </form>
 
             <div className="flex justify-end pt-3 border-t border-gray-800/80">
               <form action={deleteProject}>
