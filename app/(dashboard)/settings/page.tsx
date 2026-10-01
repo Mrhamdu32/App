@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [accent, setAccent] = useState<'purple' | 'blue' | 'emerald' | 'rose'>('purple');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -23,27 +22,15 @@ export default function SettingsPage() {
     }
     getUser();
 
-    // Load saved preferences from localStorage
-    const savedTheme = localStorage.getItem('lifeos_theme') as 'dark' | 'light';
     const savedAccent = localStorage.getItem('lifeos_accent') as 'purple' | 'blue' | 'emerald' | 'rose';
-    if (savedTheme) setTheme(savedTheme);
     if (savedAccent) setAccent(savedAccent);
   }, [router, supabase]);
-
-  const handleThemeChange = (newTheme: 'dark' | 'light') => {
-    setTheme(newTheme);
-    localStorage.setItem('lifeos_theme', newTheme);
-    // Apply class to html/body
-    if (newTheme === 'light') {
-      document.documentElement.classList.add('light-mode');
-    } else {
-      document.documentElement.classList.remove('light-mode');
-    }
-  };
 
   const handleAccentChange = (newAccent: 'purple' | 'blue' | 'emerald' | 'rose') => {
     setAccent(newAccent);
     localStorage.setItem('lifeos_accent', newAccent);
+    // Dispatch event so layout/components update instantly
+    window.dispatchEvent(new Event('accent-changed'));
   };
 
   const handleSignOut = async () => {
@@ -64,67 +51,34 @@ export default function SettingsPage() {
       </div>
 
       <div className="bg-[#111726] border border-gray-800 p-6 rounded-xl space-y-6">
-        {/* Appearance & Themes */}
         <div>
-          <h2 className="text-lg font-semibold mb-3 text-white">Appearance & Theme</h2>
-          <div className="space-y-4 bg-black/40 border border-gray-800/80 p-4 rounded-lg">
-            
-            {/* Mode Toggle */}
-            <div className="flex justify-between items-center">
-              <div>
-                <span className="text-sm font-medium text-white block">Interface Theme</span>
-                <span className="text-xs text-gray-400">Choose between dark operational mode and light mode.</span>
-              </div>
-              <div className="flex bg-black border border-gray-700 rounded-lg p-1">
-                <button
-                  onClick={() => handleThemeChange('dark')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                    theme === 'dark' ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Dark
-                </button>
-                <button
-                  onClick={() => handleThemeChange('light')}
-                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
-                    theme === 'light' ? 'bg-white text-black' : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  Light
-                </button>
-              </div>
+          <h2 className="text-lg font-semibold mb-3 text-white">Accent Palette</h2>
+          <div className="bg-black/40 border border-gray-800/80 p-4 rounded-lg flex justify-between items-center">
+            <div>
+              <span className="text-sm font-medium text-white block">System Highlight Color</span>
+              <span className="text-xs text-gray-400">Select your active workspace accent.</span>
             </div>
-
-            {/* Accent Color Selection */}
-            <div className="pt-4 border-t border-gray-800/80 flex justify-between items-center">
-              <div>
-                <span className="text-sm font-medium text-white block">Accent Palette</span>
-                <span className="text-xs text-gray-400">Select your primary system highlight color.</span>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handleAccentChange('purple')}
-                  className={`w-6 h-6 rounded-full bg-purple-500 transition-transform ${accent === 'purple' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
-                />
-                <button
-                  onClick={() => handleAccentChange('blue')}
-                  className={`w-6 h-6 rounded-full bg-blue-500 transition-transform ${accent === 'blue' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
-                />
-                <button
-                  onClick={() => handleAccentChange('emerald')}
-                  className={`w-6 h-6 rounded-full bg-emerald-500 transition-transform ${accent === 'emerald' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
-                />
-                <button
-                  onClick={() => handleAccentChange('rose')}
-                  className={`w-6 h-6 rounded-full bg-rose-500 transition-transform ${accent === 'rose' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
-                />
-              </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleAccentChange('purple')}
+                className={`w-7 h-7 rounded-full bg-purple-500 transition-transform ${accent === 'purple' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+              />
+              <button
+                onClick={() => handleAccentChange('blue')}
+                className={`w-7 h-7 rounded-full bg-blue-500 transition-transform ${accent === 'blue' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+              />
+              <button
+                onClick={() => handleAccentChange('emerald')}
+                className={`w-7 h-7 rounded-full bg-emerald-500 transition-transform ${accent === 'emerald' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+              />
+              <button
+                onClick={() => handleAccentChange('rose')}
+                className={`w-7 h-7 rounded-full bg-rose-500 transition-transform ${accent === 'rose' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+              />
             </div>
-
           </div>
         </div>
 
-        {/* User Profile */}
         <div>
           <h2 className="text-lg font-semibold mb-3 text-white">User Profile</h2>
           <div className="bg-black/40 border border-gray-800/80 p-4 rounded-lg space-y-3">
@@ -139,7 +93,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Session Management */}
         <div className="pt-4 border-t border-gray-800">
           <h2 className="text-lg font-semibold mb-3 text-white">Session Management</h2>
           <button
