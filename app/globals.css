@@ -1,27 +1,24 @@
 @import "tailwindcss";
 
 @layer base {
-  body {
-    letter-spacing: -0.01em;
+  :root {
+    font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   }
-}
+  
+  body {
+    letter-spacing: -0.011em;
+  }
 
-/* Atmospheric card glow effect */
-.atmospheric-card {
-  position: relative;
-  background: linear-gradient(180deg, rgba(17, 23, 38, 0.7) 0%, rgba(11, 15, 25, 0.9) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
-}
-
-.atmospheric-card:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  h1, h2, h3, h4, h5, h6 {
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
 }
 
 /* Custom sleek scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -30,7 +27,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: #1e293b;
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
