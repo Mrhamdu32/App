@@ -107,7 +107,7 @@ export default function HabitsPage() {
   };
 
   if (loading) {
-    return <div className="p-8 text-gray-400 text-sm">Loading habits...</div>;
+    return <div className="p-8 text-gray-500 text-xs font-mono">LOADING HABITS...</div>;
   }
 
   // Metrics calculations
@@ -159,43 +159,43 @@ export default function HabitsPage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
+    <div className="max-w-6xl mx-auto space-y-6 pb-20">
       
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-800/60 pb-6 gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-gray-800/60 pb-5 gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Habits</h1>
-          <p className="text-gray-400 text-sm mt-1">Build streaks and stay consistent.</p>
+          <h1 className="text-xl font-semibold tracking-tight text-white">Habits</h1>
+          <p className="text-gray-400 text-xs mt-0.5">Build streaks and maintain daily operational consistency.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
           {/* View Mode Toggle */}
-          <div className="flex bg-[#111726] border border-gray-800 rounded-xl p-1">
+          <div className="flex bg-[#111726] border border-gray-800 rounded-lg p-0.5">
             <button
               onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${viewMode === 'cards' ? `${accent.solid} text-white` : 'text-gray-400 hover:text-white'}`}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${viewMode === 'cards' ? `${accent.solid} text-white` : 'text-gray-400 hover:text-white'}`}
             >
               Cards
             </button>
             <button
               onClick={() => setViewMode('by_date')}
-              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${viewMode === 'by_date' ? `${accent.solid} text-white` : 'text-gray-400 hover:text-white'}`}
+              className={`px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ${viewMode === 'by_date' ? `${accent.solid} text-white` : 'text-gray-400 hover:text-white'}`}
             >
               By date
             </button>
           </div>
 
           {/* Time Range Pills */}
-          <div className="hidden sm:flex bg-[#111726] border border-gray-800 rounded-xl p-1 text-xs font-medium text-gray-400">
-            <button onClick={() => setTimeRange('week')} className={`px-3 py-1.5 rounded-lg transition-colors ${timeRange === 'week' ? 'bg-gray-800 text-white' : 'hover:text-white'}`}>Week</button>
-            <button onClick={() => setTimeRange('month')} className={`px-3 py-1.5 rounded-lg transition-colors ${timeRange === 'month' ? 'bg-gray-800 text-white' : 'hover:text-white'}`}>Month</button>
-            <button onClick={() => setTimeRange('year')} className={`px-3 py-1.5 rounded-lg transition-colors ${timeRange === 'year' ? 'bg-gray-800 text-white' : 'hover:text-white'}`}>Year</button>
+          <div className="hidden sm:flex bg-[#111726] border border-gray-800 rounded-lg p-0.5 text-[11px] font-medium text-gray-400">
+            <button onClick={() => setTimeRange('week')} className={`px-2.5 py-1 rounded-md transition-colors ${timeRange === 'week' ? 'bg-gray-800 text-white' : 'hover:text-white'}`}>Week</button>
+            <button onClick={() => setTimeRange('month')} className={`px-2.5 py-1 rounded-md transition-colors ${timeRange === 'month' ? 'bg-gray-800 text-white' : 'hover:text-white'}`}>Month</button>
+            <button onClick={() => setTimeRange('year')} className={`px-2.5 py-1 rounded-md transition-colors ${timeRange === 'year' ? 'bg-gray-800 text-white' : 'hover:text-white'}`}>Year</button>
           </div>
 
           {/* New Habit Button */}
           <button
             onClick={() => setShowAddModal(true)}
-            className={`${accent.solid} text-white font-medium text-xs px-4 py-2.5 rounded-xl transition-colors cursor-pointer flex items-center gap-2`}
+            className={`${accent.solid} text-white font-medium text-[11px] px-3.5 py-2 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5`}
           >
             <span>+</span> New habit
           </button>
@@ -204,12 +204,12 @@ export default function HabitsPage() {
 
       {/* Add Habit Modal / Inline Form */}
       {showAddModal && (
-        <div className="atmospheric-card p-6 rounded-2xl border border-gray-700/80 space-y-4">
+        <div className="atmospheric-card p-5 rounded-xl border border-gray-700/80 space-y-3">
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-semibold text-white">Create New Habit</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-300">Create New Habit</h3>
             <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-white text-xs">✕</button>
           </div>
-          <form onSubmit={handleAddHabit} className="flex gap-3">
+          <form onSubmit={handleAddHabit} className="flex gap-2.5">
             <input
               type="text"
               value={newTitle}
@@ -217,9 +217,9 @@ export default function HabitsPage() {
               placeholder="Habit title (e.g., Morning Run, Read 20 pages)..."
               required
               autoFocus
-              className="flex-1 bg-black/40 border border-gray-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+              className="flex-1 bg-black/40 border border-gray-800 rounded-lg px-3.5 py-2 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
             />
-            <button type="submit" className={`${accent.solid} text-white text-xs font-medium px-5 py-2.5 rounded-xl cursor-pointer`}>
+            <button type="submit" className={`${accent.solid} text-white text-xs font-medium px-4 py-2 rounded-lg cursor-pointer`}>
               Save Habit
             </button>
           </form>
@@ -227,35 +227,35 @@ export default function HabitsPage() {
       )}
 
       {/* Top Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="atmospheric-card p-5 rounded-2xl space-y-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-gray-400">TODAY</div>
-          <div className="text-3xl font-semibold tracking-tight text-white">{todayPct}%</div>
-          <div className="w-full bg-gray-800/80 h-1.5 rounded-full overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="atmospheric-card p-4 rounded-xl space-y-2">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">TODAY</div>
+          <div className="text-2xl font-semibold tracking-tight text-white">{todayPct}%</div>
+          <div className="w-full bg-gray-800/80 h-1 rounded-full overflow-hidden">
             <div className={`h-full ${accent.solid}`} style={{ width: `${todayPct}%` }} />
           </div>
         </div>
 
-        <div className="atmospheric-card p-5 rounded-2xl space-y-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-gray-400">THIS WEEK</div>
-          <div className="text-3xl font-semibold tracking-tight text-white">{weekPct}%</div>
-          <div className="w-full bg-gray-800/80 h-1.5 rounded-full overflow-hidden">
+        <div className="atmospheric-card p-4 rounded-xl space-y-2">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">THIS WEEK</div>
+          <div className="text-2xl font-semibold tracking-tight text-white">{weekPct}%</div>
+          <div className="w-full bg-gray-800/80 h-1 rounded-full overflow-hidden">
             <div className={`h-full ${accent.solid}`} style={{ width: `${weekPct}%` }} />
           </div>
         </div>
 
-        <div className="atmospheric-card p-5 rounded-2xl space-y-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-gray-400">THIS MONTH</div>
-          <div className="text-3xl font-semibold tracking-tight text-white">{monthPct}%</div>
-          <div className="w-full bg-gray-800/80 h-1.5 rounded-full overflow-hidden">
+        <div className="atmospheric-card p-4 rounded-xl space-y-2">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">THIS MONTH</div>
+          <div className="text-2xl font-semibold tracking-tight text-white">{monthPct}%</div>
+          <div className="w-full bg-gray-800/80 h-1 rounded-full overflow-hidden">
             <div className={`h-full ${accent.solid}`} style={{ width: `${monthPct}%` }} />
           </div>
         </div>
 
-        <div className="atmospheric-card p-5 rounded-2xl space-y-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-gray-400">THIS YEAR</div>
-          <div className="text-3xl font-semibold tracking-tight text-white">{yearPct}%</div>
-          <div className="w-full bg-gray-800/80 h-1.5 rounded-full overflow-hidden">
+        <div className="atmospheric-card p-4 rounded-xl space-y-2">
+          <div className="text-[10px] font-mono uppercase tracking-wider text-gray-400">THIS YEAR</div>
+          <div className="text-2xl font-semibold tracking-tight text-white">{yearPct}%</div>
+          <div className="w-full bg-gray-800/80 h-1 rounded-full overflow-hidden">
             <div className={`h-full ${accent.solid}`} style={{ width: `${yearPct}%` }} />
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function HabitsPage() {
 
       {/* CARDS VIEW */}
       {viewMode === 'cards' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {habits.map(habit => {
             const completedDates = habit.completed_dates || [];
             
@@ -292,42 +292,40 @@ export default function HabitsPage() {
             const isTodayDone = completedDates.includes(todayStr);
 
             return (
-              <div key={habit.id} className="atmospheric-card p-6 rounded-2xl space-y-6 flex flex-col justify-between">
+              <div key={habit.id} className="atmospheric-card p-5 rounded-xl space-y-4 flex flex-col justify-between">
                 
                 {/* Card Top: Title & Actions */}
                 <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <h3 className="font-semibold text-lg text-white">{habit.title}</h3>
-                    <span className="text-[11px] font-mono text-gray-500 uppercase tracking-widest">Daily Routine</span>
+                  <div className="space-y-0.5">
+                    <h3 className="font-medium text-sm text-white">{habit.title}</h3>
+                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Daily Habit</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => deleteHabit(habit.id)}
-                      className="text-gray-500 hover:text-rose-400 text-xs p-1.5 rounded-lg border border-gray-800 hover:border-rose-900/40 transition-colors cursor-pointer"
-                      title="Delete habit"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                  <button
+                    onClick={() => deleteHabit(habit.id)}
+                    className="text-gray-500 hover:text-rose-400 text-xs p-1 rounded-md border border-gray-800 hover:border-rose-900/40 transition-colors cursor-pointer"
+                    title="Delete habit"
+                  >
+                    🗑️
+                  </button>
                 </div>
 
                 {/* Stats & Today's Check Button */}
-                <div className="flex justify-between items-center bg-black/30 border border-gray-800/60 p-4 rounded-xl">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-12 h-12 rounded-full border-2 border-gray-800 flex items-center justify-center text-xs font-bold ${accent.text}`}>
+                <div className="flex justify-between items-center bg-black/30 border border-gray-800/60 p-3 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full border border-gray-800 flex items-center justify-center text-[11px] font-semibold ${accent.text}`}>
                       {last30Pct}%
                     </div>
-                    <div className="space-y-0.5 font-mono text-xs">
-                      <div className="text-white font-semibold">🔥 {streak} day streak</div>
-                      <div className="text-gray-400">{last30Pct}% last 30 days</div>
+                    <div className="space-y-0.5 font-mono text-[11px]">
+                      <div className="text-white font-medium">🔥 {streak} day streak</div>
+                      <div className="text-gray-400 text-[10px]">{last30Pct}% last 30 days</div>
                     </div>
                   </div>
 
                   <button
                     onClick={() => toggleDate(habit.id, todayStr, completedDates)}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold transition-all cursor-pointer border ${
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold transition-all cursor-pointer border ${
                       isTodayDone 
-                        ? `${accent.solid} text-white border-transparent scale-105 shadow-lg` 
+                        ? `${accent.solid} text-white border-transparent scale-105` 
                         : 'bg-black/50 text-gray-500 border-gray-800 hover:border-gray-600'
                     }`}
                     title={isTodayDone ? 'Completed today! Click to undo.' : 'Mark complete for today'}
@@ -337,9 +335,9 @@ export default function HabitsPage() {
                 </div>
 
                 {/* Heatmap Contribution Squares (Last 30 days) */}
-                <div className="space-y-2">
-                  <div className="text-[10px] uppercase font-mono text-gray-500 tracking-wider">30-Day Heatmap Matrix</div>
-                  <div className="grid grid-cols-10 gap-1.5 bg-black/40 p-3 rounded-xl border border-gray-800/80">
+                <div className="space-y-1.5">
+                  <div className="text-[10px] uppercase font-mono text-gray-500 tracking-wider">30-Day Heatmap</div>
+                  <div className="grid grid-cols-10 gap-1 bg-black/40 p-2.5 rounded-lg border border-gray-800/80">
                     {last30Days.map(dateStr => {
                       const done = completedDates.includes(dateStr);
                       return (
@@ -347,7 +345,7 @@ export default function HabitsPage() {
                           key={dateStr}
                           onClick={() => toggleDate(habit.id, dateStr, completedDates)}
                           title={`${dateStr}: ${done ? 'Completed' : 'Missed'}`}
-                          className={`aspect-square rounded-md transition-all cursor-pointer border ${
+                          className={`aspect-square rounded-sm transition-all cursor-pointer border ${
                             done 
                               ? `${accent.solid} border-transparent` 
                               : 'bg-gray-900/80 border-gray-800 hover:border-gray-700'
@@ -366,31 +364,31 @@ export default function HabitsPage() {
 
       {/* BY DATE VIEW */}
       {viewMode === 'by_date' && (
-        <div className="atmospheric-card rounded-2xl overflow-hidden border border-gray-800">
-          <div className="p-4 border-b border-gray-800 bg-black/40 text-xs font-mono text-gray-400 uppercase tracking-wider">
+        <div className="atmospheric-card rounded-xl overflow-hidden border border-gray-800">
+          <div className="p-3 border-b border-gray-800 bg-black/40 text-[11px] font-mono text-gray-400 uppercase tracking-wider">
             Habit Audit Matrix (Last 7 Days)
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-gray-800 text-xs font-mono text-gray-400">
-                  <th className="p-4">Habit</th>
+                <tr className="border-b border-gray-800 font-mono text-gray-400 text-[10px]">
+                  <th className="p-3">Habit</th>
                   {last7Days.map(d => (
-                    <th key={d} className="p-4 text-center">{d.slice(5)}</th>
+                    <th key={d} className="p-3 text-center">{d.slice(5)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800/60">
                 {habits.map(habit => (
                   <tr key={habit.id} className="hover:bg-white/[0.01]">
-                    <td className="p-4 font-medium text-white">{habit.title}</td>
+                    <td className="p-3 font-medium text-white">{habit.title}</td>
                     {last7Days.map(d => {
                       const done = (habit.completed_dates || []).includes(d);
                       return (
-                        <td key={d} className="p-4 text-center">
+                        <td key={d} className="p-3 text-center">
                           <button
                             onClick={() => toggleDate(habit.id, d, habit.completed_dates || [])}
-                            className={`w-7 h-7 rounded-md font-mono text-xs inline-flex items-center justify-center border transition-all cursor-pointer ${
+                            className={`w-6 h-6 rounded font-mono text-[11px] inline-flex items-center justify-center border transition-all cursor-pointer ${
                               done ? `${accent.solid} text-white border-transparent` : 'bg-black/40 text-gray-600 border-gray-800'
                             }`}
                           >
@@ -408,7 +406,7 @@ export default function HabitsPage() {
       )}
 
       {habits.length === 0 && (
-        <div className="atmospheric-card rounded-2xl py-20 text-center text-xs text-gray-500 space-y-2">
+        <div className="atmospheric-card rounded-xl py-16 text-center text-xs text-gray-500 space-y-2">
           <p>No habits configured yet.</p>
           <button onClick={() => setShowAddModal(true)} className={`${accent.text} underline cursor-pointer`}>
             Create your first habit
