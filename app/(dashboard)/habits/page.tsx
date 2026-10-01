@@ -25,11 +25,15 @@ export default async function HabitsPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  // Generate last 7 days using local date helper
-  const today = new Date();
-  const pastDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(today.getDate() - (6 - i));
+  // Generate all days for the current month
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  
+  const monthName = now.toLocaleString('en-US', { month: 'long' });
+  const monthDays = Array.from({ length: daysInMonth }, (_, i) => {
+    const d = new Date(year, month, i + 1);
     return getLocalDateString(d);
   });
 
@@ -82,17 +86,17 @@ export default async function HabitsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+    <div className="max-w-6xl mx-auto space-y-8 pb-16">
       {/* Header */}
       <div className="flex justify-between items-end border-b border-gray-800/60 pb-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">Habit Tracker</h1>
-          <p className="text-gray-400 text-sm mt-1">Build daily consistency and review your 7-day historical matrix.</p>
+          <p className="text-gray-400 text-sm mt-1">Monthly performance matrix for {monthName} {year}.</p>
         </div>
       </div>
 
       {/* Add Habit Form */}
-      <form action={addHabit} className="flex gap-3">
+      <form action={addHabit} className="flex gap-3 max-w-2xl">
         <input 
           type="text" 
           name="title" 
@@ -108,13 +112,13 @@ export default async function HabitsPage() {
         </button>
       </form>
 
-      {/* Habits List with 7-Day History Matrix */}
-      <div className="space-y-4">
+      {/* Habits List with Full Monthly Matrix */}
+      <div className="space-y-6">
         {habits?.map(habit => {
           const completedDates: string[] = habit.completed_dates || [];
-          const totalWins = completedDates.length;
+          const totalWins = completedDates.filter(d => d.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)).length;
           
-          // Calculate active consecutive streak ending today or yesterday
+          // Calculate active consecutive streak
           let streak = 0;
           let checkDate = new Date();
           const todayStr = getLocalDateString(checkDate);
@@ -138,55 +142,64 @@ export default async function HabitsPage() {
           }
 
           return (
-            <div key={habit.id} className="atmospheric-card p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div key={habit.id} className="atmospheric-card p-6 rounded-2xl space-y-4">
               
-              {/* Habit Info, Streak & Total Wins */}
-              <div className="space-y-1">
-                <h3 className="font-medium text-sm text-white">{habit.title}</h3>
-                <div className="flex items-center gap-4 text-xs text-gray-400 font-mono">
-                  <span>Streak: <strong className={accent.text}>{streak} days</strong></span>
-                  <span>Total Wins: <strong className="text-white">{totalWins}</strong></span>
+              {/* Habit Info & Stats */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                <div className="space-y-1">
+                  <h3 className="font-medium text-base text-white">{habit.title}</h3>
+                  <div className="flex items-center gap-4 text-xs text-gray-400 font-mono">
+                    <span>Streak: <strong className={accent.text}>{streak} days</strong></span>
+                    <span>{monthName} Wins: <strong className="text-white">{totalWins} / {daysInMonth}</strong></span>
+                  </div>
                 </div>
-              </div>
-
-              {/* 7-Day History Matrix Grid */}
-              <div className="flex items-center gap-2">
-                {pastDays.map(dateStr => {
-                  const isDone = completedDates.includes(dateStr);
-                  const dayLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
-                  
-                  return (
-                    <form key={dateStr} action={async () => {
-                      'use server';
-                      await toggleHabitDate(habit.id, dateStr, completedDates);
-                    }}>
-                      <button 
-                        type="submit"
-                        title={`${dateStr}: ${isDone ? 'Completed' : 'Missed'}`}
-                        className={`w-9 h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-mono border transition-all cursor-pointer ${
-                          isDone 
-                            ? `${accent.bg} ${accent.text}${accent.border} scale-105` 
-                            : 'bg-black/30 text-gray-500 border-gray-800/80 hover:border-gray-700'
-                        }`}
-                      >
-                        <span className="opacity-70">{dayLabel}</span>
-                        <span className="font-bold">{isDone ? '✓' : '·'}</span>
-                      </button>
-                    </form>
-                  );
-                })}
 
                 {/* Delete Button */}
-                <form action={deleteHabit} className="ml-3 pl-3 border-l border-gray-800">
+                <form action={deleteHabit}>
                   <input type="hidden" name="habitId" value={habit.id} />
                   <button 
                     type="submit" 
-                    className="text-gray-600 hover:text-rose-400 text-xs px-2 py-1 transition-colors cursor-pointer"
-                    title="Delete habit"
+                    className="text-gray-500 hover:text-rose-400 text-xs px-2.5 py-1 rounded-lg border border-gray-800 hover:border-rose-900/50 transition-colors cursor-pointer"
                   >
-                    ✕
+                    Delete Habit
                   </button>
                 </form>
+              </div>
+
+              {/* Monthly Matrix Grid (Scrollable or responsive grid) */}
+              <div className="overflow-x-auto pb-2">
+                <div className="flex gap-1.5 min-w-max">
+                  {monthDays.map((dateStr, index) => {
+                    const isDone = completedDates.includes(dateStr);
+                    const dayNum = index + 1;
+                    const dObj = new Date(dateStr + 'T00:00:00');
+                    const dayLabel = dObj.toLocaleDateString('en-US', { weekday: 'narrow' });
+                    const isToday = dateStr === getLocalDateString(new Date());
+
+                    return (
+                      <form key={dateStr} action={async () => {
+                        'use server';
+                        await toggleHabitDate(habit.id, dateStr, completedDates);
+                      }}>
+                        <button 
+                          type="submit"
+                          title={`${dateStr}: ${isDone ? 'Completed' : 'Missed'}`}
+                          className={`w-8 h-12 rounded-lg flex flex-col items-center justify-center text-[10px] font-mono border transition-all cursor-pointer ${
+                            isDone 
+                              ? `${accent.bg} ${accent.text}${accent.border} scale-105` 
+                              : isToday 
+                              ? 'bg-gray-800/60 text-white border-gray-600'
+                              : 'bg-black/30 text-gray-500 border-gray-800/80 hover:border-gray-700'
+                          }`}
+                        >
+                          <span className="opacity-60 text-[9px]">{dayLabel}</span>
+                          <span className="font-bold text-xs">{dayNum}</span>
+                          <span className="text-[9px]">{isDone ? '✓' : '·'}</span>
+                        </button>
+                      </form>
+                    );
+                  })}
+                </div>
               </div>
 
             </div>
@@ -196,7 +209,7 @@ export default async function HabitsPage() {
         {(!habits || habits.length === 0) && (
           <div className="atmospheric-card rounded-2xl py-16 text-center text-xs text-gray-500 space-y-2">
             <p>No habits configured yet.</p>
-            <p className="text-gray-600">Add a daily habit above to start building consistency.</p>
+            <p className="text-gray-600">Add a daily habit above to start tracking your monthly discipline.</p>
           </div>
         )}
       </div>
