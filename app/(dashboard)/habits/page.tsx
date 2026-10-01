@@ -3,6 +3,14 @@ import { redirect } from 'next/navigation';
 import { getAccentClasses } from '@/utils/accent';
 import { revalidatePath } from 'next/cache';
 
+// Helper to get local YYYY-MM-DD without UTC shift bugs
+function getLocalDateString(d: Date) {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default async function HabitsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -17,12 +25,12 @@ export default async function HabitsPage() {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  // Generate last 7 days (YYYY-MM-DD format)
+  // Generate last 7 days using local date helper
   const today = new Date();
   const pastDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(today.getDate() - (6 - i));
-    return d.toISOString().split('T')[0];
+    return getLocalDateString(d);
   });
 
   // Server actions
@@ -105,11 +113,22 @@ export default async function HabitsPage() {
         {habits?.map(habit => {
           const completedDates: string[] = habit.completed_dates || [];
           
-          // Calculate current streak
+          // Calculate streak robustly (allows checking from today or yesterday)
           let streak = 0;
           let checkDate = new Date();
+          const todayStr = getLocalDateString(checkDate);
+
+          // If today isn't checked yet, check if yesterday was completed to start streak
+          if (!completedDates.includes(todayStr)) {
+            const yesterday = new Date();
+            yesterday.setDate(checkDate.getDate() - 1);
+            if (completedDates.includes(getLocalDateString(yesterday))) {
+              checkDate = yesterday;
+            }
+          }
+
           while (true) {
-            const dateStr = checkDate.toISOString().split('T')[0];
+            const dateStr = getLocalDateString(checkDate);
             if (completedDates.includes(dateStr)) {
               streak++;
               checkDate.setDate(checkDate.getDate() - 1);
@@ -133,7 +152,7 @@ export default async function HabitsPage() {
               <div className="flex items-center gap-2">
                 {pastDays.map(dateStr => {
                   const isDone = completedDates.includes(dateStr);
-                  const dayLabel = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'narrow' });
+                  const dayLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' });
                   
                   return (
                     <form key={dateStr} action={async () => {
