@@ -84,9 +84,9 @@ export default async function NotesPage() {
         <textarea 
           name="content" 
           placeholder="Write your note content here..." 
-          rows={3}
           required
-          className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
+          style={{ fieldSizing: 'content' }}
+          className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 min-h-[120px] resize-y"
         ></textarea>
         <SubmitButton 
           defaultText="Save Note" 
@@ -118,9 +118,9 @@ export default async function NotesPage() {
               <textarea 
                 name="content" 
                 defaultValue={note.content}
-                rows={3}
                 required
-                className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500"
+                style={{ fieldSizing: 'content' }}
+                className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-xs focus:outline-none focus:border-purple-500 min-h-[100px] resize-y"
               ></textarea>
 
               <div className="flex justify-between items-center pt-2 border-t border-gray-800/80">
