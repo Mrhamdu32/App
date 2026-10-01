@@ -28,7 +28,7 @@ export default async function DashboardLayout({
 
           {/* Navigation Links */}
           <nav className="p-4 space-y-1.5 text-sm font-medium">
-            <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-purple-600/10 text-purple-400 border border-purple-500/20 transition-colors">
+            <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors">
               <span>📊</span> Dashboard
             </Link>
             <Link href="/tasks" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors">
@@ -39,6 +39,9 @@ export default async function DashboardLayout({
             </Link>
             <Link href="/goals" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors">
               <span>🎯</span> Goals
+            </Link>
+            <Link href="/reading" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors">
+              <span>📖</span> Reading
             </Link>
             <Link href="/projects" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-gray-800/50 hover:text-white transition-colors">
               <span>📁</span> Projects
@@ -65,7 +68,9 @@ export default async function DashboardLayout({
         {/* Top Header */}
         <header className="h-16 border-b border-gray-800 bg-[#0e131f]/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-400">Thu 1 Oct</span>
+            <span className="text-sm text-gray-400">
+              {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center font-bold text-xs">
