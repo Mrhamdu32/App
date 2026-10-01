@@ -45,35 +45,44 @@ export default async function DashboardPage() {
   const currentReadingBooks = books?.filter(b => b.status === 'reading') || [];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-10 pb-12">
+    <div className="max-w-6xl mx-auto space-y-10 pb-16">
       {/* Page Header */}
       <div className="flex justify-between items-end border-b border-gray-800/60 pb-6">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400 font-semibold">System Operational</span>
+          </div>
           <h1 className="text-2xl font-semibold tracking-tight text-white">Command Center</h1>
-          <p className="text-gray-400 text-sm mt-1">Operational metrics and system overview.</p>
         </div>
-        <div className="text-xs font-mono text-gray-500 uppercase tracking-widest">
-          SYSTEM ONLINE // {user.email}
+        <div className="text-xs font-mono text-gray-500 uppercase tracking-widest hidden sm:block">
+          NODE: {user.email?.split('@')[0]}
         </div>
       </div>
 
-      {/* Top Metric Strip (Clean Border Grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 border border-gray-800/80 rounded-2xl divide-y sm:divide-y-0 sm:divide-x divide-gray-800/80 bg-[#0e131f]/40 backdrop-blur-sm overflow-hidden">
+      {/* Top Metric Cards with Atmospheric Lighting */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
-        <div className="p-6 space-y-2">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Net Balance</span>
+        <div className="atmospheric-card p-6 rounded-2xl space-y-3 group">
+          <div className="flex justify-between items-center text-gray-400 text-xs font-medium uppercase tracking-wider">
+            <span>Net Balance</span>
+            <span className="text-base">💳</span>
+          </div>
           <div className={`text-3xl font-semibold tracking-tight ${netBalance >= 0 ? accent.text : 'text-rose-400'}`}>
             ₹{netBalance.toLocaleString()}
           </div>
           <div>
             <Link href="/finance" className={`text-xs font-medium ${accent.text} hover:underline inline-flex items-center gap-1`}>
-              Finance ledger <span className="text-[10px]">→</span>
+              View ledger <span className="text-[10px]">→</span>
             </Link>
           </div>
         </div>
 
-        <div className="p-6 space-y-2">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Pending Tasks</span>
+        <div className="atmospheric-card p-6 rounded-2xl space-y-3 group">
+          <div className="flex justify-between items-center text-gray-400 text-xs font-medium uppercase tracking-wider">
+            <span>Pending Tasks</span>
+            <span className="text-base">📝</span>
+          </div>
           <div className="text-3xl font-semibold tracking-tight text-white">{pendingTasks}</div>
           <div>
             <Link href="/tasks" className={`text-xs font-medium ${accent.text} hover:underline inline-flex items-center gap-1`}>
@@ -82,8 +91,11 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="p-6 space-y-2">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Active Projects</span>
+        <div className="atmospheric-card p-6 rounded-2xl space-y-3 group">
+          <div className="flex justify-between items-center text-gray-400 text-xs font-medium uppercase tracking-wider">
+            <span>Active Projects</span>
+            <span className="text-base">📁</span>
+          </div>
           <div className={`text-3xl font-semibold tracking-tight ${accent.text}`}>{activeProjectsCount}</div>
           <div>
             <Link href="/projects" className={`text-xs font-medium ${accent.text} hover:underline inline-flex items-center gap-1`}>
@@ -92,8 +104,11 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        <div className="p-6 space-y-2">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">Reading Focus</span>
+        <div className="atmospheric-card p-6 rounded-2xl space-y-3 group">
+          <div className="flex justify-between items-center text-gray-400 text-xs font-medium uppercase tracking-wider">
+            <span>Reading Focus</span>
+            <span className="text-base">📖</span>
+          </div>
           <div className="text-3xl font-semibold tracking-tight text-white">{currentReadingBooks.length} <span className="text-sm font-normal text-gray-500">active</span></div>
           <div>
             <Link href="/reading" className={`text-xs font-medium ${accent.text} hover:underline inline-flex items-center gap-1`}>
@@ -114,12 +129,15 @@ export default async function DashboardPage() {
             <Link href="/projects" className="text-xs font-medium text-gray-400 hover:text-white transition-colors">View all</Link>
           </div>
           
-          <div className="border border-gray-800/80 rounded-xl bg-[#0e131f]/40 divide-y divide-gray-800/60 overflow-hidden">
+          <div className="atmospheric-card rounded-2xl divide-y divide-gray-800/60 overflow-hidden">
             {projects?.map(project => (
-              <div key={project.id} className="p-5 flex justify-between items-center hover:bg-white/[0.02] transition-colors">
+              <div key={project.id} className="p-5 flex justify-between items-center hover:bg-white/[0.01] transition-colors">
                 <div className="space-y-1 pr-4">
-                  <h4 className="font-medium text-sm text-white">{project.title}</h4>
-                  <p className="text-xs text-gray-400 line-clamp-1">{project.description || 'No description provided'}</p>
+                  <h4 className="font-medium text-sm text-white flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                    {project.title}
+                  </h4>
+                  <p className="text-xs text-gray-400 line-clamp-1 pl-3.5">{project.description || 'No description provided'}</p>
                 </div>
                 <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-md uppercase tracking-wider whitespace-nowrap border ${
                   project.status === 'completed' ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/40' :
@@ -143,13 +161,13 @@ export default async function DashboardPage() {
             <Link href="/reading" className="text-xs font-medium text-gray-400 hover:text-white transition-colors">Library</Link>
           </div>
 
-          <div className="border border-gray-800/80 rounded-xl bg-[#0e131f]/40 divide-y divide-gray-800/60 overflow-hidden">
+          <div className="atmospheric-card rounded-2xl divide-y divide-gray-800/60 overflow-hidden">
             {currentReadingBooks.map(book => {
               const percentage = book.total_pages > 0 
                 ? Math.min(100, Math.round((book.pages_read / book.total_pages) * 100)) 
                 : 0;
               return (
-                <div key={book.id} className="p-5 flex justify-between items-center hover:bg-white/[0.02] transition-colors">
+                <div key={book.id} className="p-5 flex justify-between items-center hover:bg-white/[0.01] transition-colors">
                   <div className="space-y-1">
                     <h4 className="font-medium text-sm text-white">{book.title}</h4>
                     <p className={`text-xs font-medium ${accent.text}`}>by {book.author}</p>
@@ -178,15 +196,15 @@ export default async function DashboardPage() {
           <Link href="/notes" className="text-xs font-medium text-gray-400 hover:text-white transition-colors">Open Notebook</Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {notes?.map(note => (
-            <div key={note.id} className="border border-gray-800/80 rounded-xl bg-[#0e131f]/40 p-5 space-y-2 hover:border-gray-700/80 transition-colors">
+            <div key={note.id} className="atmospheric-card rounded-2xl p-5 space-y-2 hover:border-gray-700/80 transition-colors">
               <h4 className="font-medium text-sm text-white">{note.title}</h4>
               <p className="text-xs text-gray-400 leading-relaxed line-clamp-3">{note.content}</p>
             </div>
           ))}
           {(!notes || notes.length === 0) && (
-            <div className="col-span-full border border-dashed border-gray-800 rounded-xl py-12 text-center text-xs text-gray-500">
+            <div className="col-span-full atmospheric-card rounded-2xl py-12 text-center text-xs text-gray-500">
               No notes captured yet.
             </div>
           )}
