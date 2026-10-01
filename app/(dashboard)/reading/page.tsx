@@ -8,11 +8,28 @@ export default async function ReadingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
+  // 1. Fetch books
   const { data: books } = await supabase
     .from('books')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  // 2. Fetch all book notes for this user
+  const { data: notes } = await supabase
+    .from('book_notes')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  // Map notes by book_id for easy lookup
+  const notesByBook: Record<string, Array<{ id: string; content: string; created_at: string }>> = {};
+  notes?.forEach((note) => {
+    if (!notesByBook[note.book_id]) {
+      notesByBook[note.book_id] = [];
+    }
+    notesByBook[note.book_id].push(note);
+  });
 
   async function addBook(formData: FormData) {
     'use server';
@@ -20,7 +37,7 @@ export default async function ReadingPage() {
     const author = formData.get('author') as string;
     const total_pages = parseInt(formData.get('total_pages') as string) || 0;
     const status = formData.get('status') as string;
-    const notes = formData.get('notes') as string;
+    const initialNote = formData.get('initial_note') as string;
 
     if (!title || !author) return;
 
@@ -28,15 +45,26 @@ export default async function ReadingPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase.from('books').insert([{
+    // Insert book
+    const { data: newBook, error } = await supabase.from('books').insert([{
       title,
       author,
       total_pages,
       pages_read: status === 'completed' ? total_pages : 0,
       status,
-      notes,
       user_id: user.id
-    }]);
+    }]).select().single();
+
+    if (error || !newBook) return;
+
+    // If initial note was provided, insert it into book_notes
+    if (initialNote && initialNote.trim() !== '') {
+      await supabase.from('book_notes').insert([{
+        book_id: newBook.id,
+        user_id: user.id,
+        content: initialNote
+      }]);
+    }
 
     revalidatePath('/reading');
   }
@@ -46,7 +74,6 @@ export default async function ReadingPage() {
     const id = formData.get('id') as string;
     const pages_read = parseInt(formData.get('pages_read') as string) || 0;
     const total_pages = parseInt(formData.get('total_pages') as string) || 1;
-    const notes = formData.get('notes') as string;
 
     let status = 'reading';
     if (pages_read >= total_pages) status = 'completed';
@@ -54,10 +81,38 @@ export default async function ReadingPage() {
     const supabase = await createClient();
     await supabase.from('books').update({
       pages_read,
-      status,
-      notes
+      status
     }).eq('id', id);
 
+    revalidatePath('/reading');
+  }
+
+  async function addNote(formData: FormData) {
+    'use server';
+    const book_id = formData.get('book_id') as string;
+    const content = formData.get('content') as string;
+    if (!book_id || !content || !content.trim()) return;
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from('book_notes').insert([{
+      book_id,
+      user_id: user.id,
+      content
+    }]);
+
+    revalidatePath('/reading');
+  }
+
+  async function deleteNote(formData: FormData) {
+    'use server';
+    const note_id = formData.get('note_id') as string;
+    if (!note_id) return;
+
+    const supabase = await createClient();
+    await supabase.from('book_notes').delete().eq('id', note_id);
     revalidatePath('/reading');
   }
 
@@ -75,7 +130,7 @@ export default async function ReadingPage() {
     <div className="max-w-5xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Reading & Library</h1>
-        <p className="text-gray-400 text-sm mt-1">Track your literature, page progression, and insights.</p>
+        <p className="text-gray-400 text-sm mt-1">Track your literature, page progression, and cumulative insights.</p>
       </div>
 
       {/* Add Book Form */}
@@ -113,8 +168,8 @@ export default async function ReadingPage() {
           </select>
         </div>
         <textarea 
-          name="notes" 
-          placeholder="Initial notes, key takeaways, or summary..." 
+          name="initial_note" 
+          placeholder="First note or initial takeaway (optional)..." 
           rows={2}
           className="w-full bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500"
         ></textarea>
@@ -131,10 +186,11 @@ export default async function ReadingPage() {
           const percentage = book.total_pages > 0 
             ? Math.min(100, Math.round((book.pages_read / book.total_pages) * 100)) 
             : 0;
+          const bookNotes = notesByBook[book.id] || [];
 
           return (
             <div key={book.id} className="bg-[#111726] border border-gray-800 p-6 rounded-xl flex flex-col justify-between space-y-4">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex justify-between items-start gap-2">
                   <div>
                     <h3 className="font-bold text-lg text-white">{book.title}</h3>
@@ -163,16 +219,46 @@ export default async function ReadingPage() {
                   </div>
                 </div>
 
-                {/* Notes Section */}
-                <div className="bg-black/40 border border-gray-800/80 p-3 rounded-lg mt-3">
-                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block mb-1">Notes & Insights</span>
-                  <p className="text-xs text-gray-300 whitespace-pre-wrap">{book.notes || "No notes added yet."}</p>
+                {/* Notes Stream Section */}
+                <div className="space-y-2 mt-2">
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Notes & Insights Stream</span>
+                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                    {bookNotes.map((note) => (
+                      <div key={note.id} className="bg-black/40 border border-gray-800/80 p-2.5 rounded-lg flex justify-between items-start gap-2">
+                        <p className="text-xs text-gray-300 whitespace-pre-wrap flex-1">{note.content}</p>
+                        <form action={deleteNote}>
+                          <input type="hidden" name="note_id" value={note.id} />
+                          <button type="submit" className="text-gray-500 hover:text-red-400 text-xs px-1 transition-colors">×</button>
+                        </form>
+                      </div>
+                    ))}
+                    {bookNotes.length === 0 && (
+                      <p className="text-xs text-gray-500 italic">No notes recorded yet.</p>
+                    )}
+                  </div>
                 </div>
+
+                {/* Add New Note Form for this specific book */}
+                <form action={addNote} className="flex gap-2 pt-1">
+                  <input type="hidden" name="book_id" value={book.id} />
+                  <input 
+                    type="text" 
+                    name="content" 
+                    placeholder="Add a new note or insight..." 
+                    required
+                    className="flex-1 bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-purple-500"
+                  />
+                  <SubmitButton 
+                    defaultText="Add Note" 
+                    loadingText="..." 
+                    baseClass="bg-purple-600/80 hover:bg-purple-600 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors text-white"
+                  />
+                </form>
               </div>
 
-              {/* Quick Update Form */}
-              <div className="pt-4 border-t border-gray-800/80 flex flex-col gap-3">
-                <form action={updateProgress} className="flex gap-2 items-center">
+              {/* Page Progress Update & Delete Book */}
+              <div className="pt-4 border-t border-gray-800/80 flex items-center justify-between gap-2">
+                <form action={updateProgress} className="flex gap-2 items-center flex-1">
                   <input type="hidden" name="id" value={book.id} />
                   <input type="hidden" name="total_pages" value={book.total_pages} />
                   <input 
@@ -183,30 +269,21 @@ export default async function ReadingPage() {
                     max={book.total_pages}
                     className="w-24 bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-purple-500"
                   />
-                  <input 
-                    type="text" 
-                    name="notes" 
-                    defaultValue={book.notes || ''}
-                    placeholder="Update notes..."
-                    className="flex-1 bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-purple-500"
-                  />
                   <SubmitButton 
-                    defaultText="Update" 
+                    defaultText="Update Pages" 
                     loadingText="..." 
                     baseClass="bg-gray-800 hover:bg-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-700 transition-colors"
                   />
                 </form>
 
-                <div className="flex justify-end">
-                  <form action={deleteBook}>
-                    <input type="hidden" name="id" value={book.id} />
-                    <SubmitButton 
-                      defaultText="Delete Book" 
-                      loadingText="..." 
-                      baseClass="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-1 bg-red-950/40 rounded-lg border border-red-900/40 transition-colors"
-                    />
-                  </form>
-                </div>
+                <form action={deleteBook}>
+                  <input type="hidden" name="id" value={book.id} />
+                  <SubmitButton 
+                    defaultText="Delete" 
+                    loadingText="..." 
+                    baseClass="text-red-400 hover:text-red-300 text-xs font-semibold px-2.5 py-1.5 bg-red-950/40 rounded-lg border border-red-900/40 transition-colors"
+                  />
+                </form>
               </div>
             </div>
           );
