@@ -9,11 +9,15 @@ export default async function ProjectsPage() {
   if (!user) redirect('/login');
 
   // Fetch projects
-  const { data: projects } = await supabase
+  const { data: projects, error: fetchError } = await supabase
     .from('projects')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
+
+  if (fetchError) {
+    console.error("Error fetching projects:", fetchError.message);
+  }
 
   async function addProject(formData: FormData) {
     'use server';
@@ -22,21 +26,28 @@ export default async function ProjectsPage() {
     const status = formData.get('status') as string;
     const targetDate = formData.get('target_date') as string;
 
-    if (!title) return;
+    if (!title || !title.trim()) return;
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from('projects').insert([{
-      title,
-      description,
+    const projectData: any = {
+      title: title.trim(),
+      description: description ? description.trim() : null,
       status: status || 'in_progress',
-      target_date: targetDate || null,
       user_id: user.id
-    }]);
+    };
 
-    if (error) console.error("Project insert error:", error);
+    if (targetDate && targetDate.trim() !== '') {
+      projectData.target_date = targetDate;
+    }
+
+    const { error } = await supabase.from('projects').insert([projectData]);
+
+    if (error) {
+      console.error("Project insert error:", error.message);
+    }
     revalidatePath('/projects');
   }
 
@@ -46,7 +57,6 @@ export default async function ProjectsPage() {
     const currentStatus = formData.get('currentStatus') as string;
     if (!id) return;
 
-    // Cycle through statuses: planning -> in_progress -> completed -> planning
     const nextStatusMap: Record<string, string> = {
       planning: 'in_progress',
       in_progress: 'completed',
@@ -55,9 +65,8 @@ export default async function ProjectsPage() {
     const newStatus = nextStatusMap[currentStatus] || 'in_progress';
 
     const supabase = await createClient();
-    const { error } = await supabase.from('projects').update({ status: newStatus }).eq('id', id);
+    await supabase.from('projects').update({ status: newStatus }).eq('id', id);
 
-    if (error) console.error("Project status update error:", error);
     revalidatePath('/projects');
   }
 
@@ -67,9 +76,8 @@ export default async function ProjectsPage() {
     if (!id) return;
 
     const supabase = await createClient();
-    const { error } = await supabase.from('projects').delete().eq('id', id);
+    await supabase.from('projects').delete().eq('id', id);
 
-    if (error) console.error("Project delete error:", error);
     revalidatePath('/projects');
   }
 
