@@ -22,15 +22,18 @@ export default function SettingsPage() {
     }
     getUser();
 
-    const savedAccent = localStorage.getItem('lifeos_accent') as 'purple' | 'blue' | 'emerald' | 'rose';
-    if (savedAccent) setAccent(savedAccent);
+    // Read cookie for initial state
+    const match = document.cookie.match(new RegExp('(^| )lifeos_accent=([^;]+)'));
+    if (match) {
+      setAccent(match[2] as any);
+    }
   }, [router, supabase]);
 
   const handleAccentChange = (newAccent: 'purple' | 'blue' | 'emerald' | 'rose') => {
     setAccent(newAccent);
-    localStorage.setItem('lifeos_accent', newAccent);
-    // Dispatch event so layout/components update instantly
-    window.dispatchEvent(new Event('accent-changed'));
+    // Save to cookie expiring in 1 year
+    document.cookie = `lifeos_accent=${newAccent}; path=/; max-age=31536000`;
+    router.refresh();
   };
 
   const handleSignOut = async () => {
@@ -61,19 +64,19 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <button
                 onClick={() => handleAccentChange('purple')}
-                className={`w-7 h-7 rounded-full bg-purple-500 transition-transform ${accent === 'purple' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+                className={`w-7 h-7 rounded-full bg-purple-500 transition-transform cursor-pointer ${accent === 'purple' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
               />
               <button
                 onClick={() => handleAccentChange('blue')}
-                className={`w-7 h-7 rounded-full bg-blue-500 transition-transform ${accent === 'blue' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+                className={`w-7 h-7 rounded-full bg-blue-500 transition-transform cursor-pointer ${accent === 'blue' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
               />
               <button
                 onClick={() => handleAccentChange('emerald')}
-                className={`w-7 h-7 rounded-full bg-emerald-500 transition-transform ${accent === 'emerald' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+                className={`w-7 h-7 rounded-full bg-emerald-500 transition-transform cursor-pointer ${accent === 'emerald' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
               />
               <button
                 onClick={() => handleAccentChange('rose')}
-                className={`w-7 h-7 rounded-full bg-rose-500 transition-transform ${accent === 'rose' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
+                className={`w-7 h-7 rounded-full bg-rose-500 transition-transform cursor-pointer ${accent === 'rose' ? 'ring-2 ring-white scale-110' : 'opacity-60 hover:opacity-100'}`}
               />
             </div>
           </div>

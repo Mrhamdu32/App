@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 
 export default async function DashboardLayout({
@@ -14,6 +15,18 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
+  const cookieStore = await cookies();
+  const accent = cookieStore.get('lifeos_accent')?.value || 'purple';
+
+  const accentGradients: Record<string, string> = {
+    purple: 'from-purple-400 to-blue-500',
+    blue: 'from-blue-400 to-cyan-500',
+    emerald: 'from-emerald-400 to-teal-500',
+    rose: 'from-rose-400 to-orange-500',
+  };
+
+  const activeGradient = accentGradients[accent] || accentGradients.purple;
+
   return (
     <div className="flex min-h-screen bg-[#0b0f19] text-white">
       {/* Sidebar */}
@@ -21,7 +34,7 @@ export default async function DashboardLayout({
         <div>
           {/* Logo / Brand */}
           <div className="h-16 flex items-center px-6 border-b border-gray-800">
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
+            <span className={`text-xl font-bold bg-gradient-to-r ${activeGradient} bg-clip-text text-transparent`}>
               LifeOS
             </span>
           </div>
@@ -73,7 +86,7 @@ export default async function DashboardLayout({
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center font-bold text-xs">
+            <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${activeGradient} flex items-center justify-center font-bold text-xs text-white`}>
               H
             </div>
           </div>
