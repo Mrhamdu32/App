@@ -1,162 +1,183 @@
 import { createClient } from '@/utils/supabase/server';
-import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { SubmitButton } from '../../components/SubmitButton';
+import { getAccentClasses } from '@/utils/accent';
+import { revalidatePath } from 'next/cache';
 
 export default async function HabitsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) {
-    redirect('/login');
-  }
+  if (!user) redirect('/login');
 
-  const today = new Date().toISOString().split('T')[0];
+  const accent = await getAccentClasses();
 
-  // 1. Fetch habits for this user
+  // Fetch habits
   const { data: habits } = await supabase
     .from('habits')
     .select('*')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
 
-  // 2. Fetch today's logs for these habits
-  const { data: logs } = await supabase
-    .from('habit_logs')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('date', today);
-
-  // Map logs into a quick lookup dictionary: { [habit_id]: boolean }
-  const completedTodayMap: Record<string, boolean> = {};
-  logs?.forEach((log) => {
-    completedTodayMap[log.habit_id] = log.completed;
+  // Generate last 7 days (YYYY-MM-DD format)
+  const today = new Date();
+  const pastDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(today.getDate() - (6 - i));
+    return d.toISOString().split('T')[0];
   });
 
+  // Server actions
   async function addHabit(formData: FormData) {
     'use server';
-    const title = formData.get('title') as string;
+    const title = formData.get('title')?.toString();
     if (!title) return;
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from('habits').insert([{
+    await supabase.from('habits').insert({
+      user_id: user.id,
       title,
-      user_id: user.id
-    }]);
+      completed_dates: []
+    });
 
-    if (error) console.error("Habit insert error:", error);
     revalidatePath('/habits');
-    revalidatePath('/');
+  }
+
+  async function toggleHabitDate(habitId: string, dateStr: string, currentDates: string[] = []) {
+    'use server';
+    const supabase = await createClient();
+    
+    let updatedDates = [...(currentDates || [])];
+    if (updatedDates.includes(dateStr)) {
+      updatedDates = updatedDates.filter(d => d !== dateStr);
+    } else {
+      updatedDates.push(dateStr);
+    }
+
+    await supabase
+      .from('habits')
+      .update({ completed_dates: updatedDates })
+      .eq('id', habitId);
+
+    revalidatePath('/habits');
   }
 
   async function deleteHabit(formData: FormData) {
     'use server';
-    const id = formData.get('id') as string;
-    if (!id) return;
-
-    const supabase = await createClient();
-    const { error } = await supabase.from('habits').delete().eq('id', id);
-    if (error) console.error("Habit delete error:", error);
-    revalidatePath('/habits');
-    revalidatePath('/');
-  }
-
-  async function toggleHabit(formData: FormData) {
-    'use server';
-    const habitId = formData.get('habitId') as string;
-    const currentState = formData.get('currentState') === 'true';
+    const habitId = formData.get('habitId')?.toString();
     if (!habitId) return;
 
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const todayStr = new Date().toISOString().split('T')[0];
-
-    // Upsert the log for today
-    const { error } = await supabase.from('habit_logs').upsert({
-      habit_id: habitId,
-      user_id: user.id,
-      date: todayStr,
-      completed: !currentState
-    }, {
-      onConflict: 'habit_id,date'
-    });
-
-    if (error) console.error("Habit log error:", error);
+    await supabase.from('habits').delete().eq('id', habitId);
     revalidatePath('/habits');
-    revalidatePath('/');
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Habit Tracker</h1>
-        <p className="text-gray-400 text-sm mt-1">Build daily consistency. Mark your wins for today.</p>
+    <div className="max-w-4xl mx-auto space-y-8 pb-16">
+      {/* Header */}
+      <div className="flex justify-between items-end border-b border-gray-800/60 pb-6">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Habit Tracker</h1>
+          <p className="text-gray-400 text-sm mt-1">Build daily consistency and review your 7-day historical matrix.</p>
+        </div>
       </div>
 
       {/* Add Habit Form */}
-      <form action={addHabit} className="flex flex-col sm:flex-row gap-4 bg-[#111726] p-4 rounded-xl border border-gray-800">
+      <form action={addHabit} className="flex gap-3">
         <input 
           type="text" 
           name="title" 
-          placeholder="New daily habit (e.g., Read 10 pages)..." 
+          placeholder="New daily habit (e.g., Bodyweight training)..." 
           required
-          className="flex-1 bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-purple-500 text-sm"
-          autoComplete="off"
+          className="flex-1 bg-[#111726] border border-gray-800 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
         />
-        <SubmitButton 
-          defaultText="Add Habit" 
-          loadingText="Adding..." 
-          baseClass="bg-purple-600 hover:bg-purple-700 px-6 py-2.5 rounded-lg font-semibold transition-colors text-sm"
-        />
+        <button 
+          type="submit" 
+          className={`${accent.button} text-white font-medium text-xs px-6 py-3 rounded-xl transition-colors cursor-pointer whitespace-nowrap`}
+        >
+          Add Habit
+        </button>
       </form>
 
-      {/* Habits List */}
-      <div className="space-y-3">
-        {habits?.map((habit) => {
-          const isDone = completedTodayMap[habit.id] || false;
+      {/* Habits List with 7-Day History Matrix */}
+      <div className="space-y-4">
+        {habits?.map(habit => {
+          const completedDates: string[] = habit.completed_dates || [];
+          
+          // Calculate current streak
+          let streak = 0;
+          let checkDate = new Date();
+          while (true) {
+            const dateStr = checkDate.toISOString().split('T')[0];
+            if (completedDates.includes(dateStr)) {
+              streak++;
+              checkDate.setDate(checkDate.getDate() - 1);
+            } else {
+              break;
+            }
+          }
+
           return (
-            <div key={habit.id} className="bg-[#111726] p-4 rounded-xl flex items-center justify-between border border-gray-800 gap-4">
-              <span className={`text-base font-medium ${isDone ? 'line-through text-gray-500' : 'text-white'}`}>
-                {habit.title}
-              </span>
+            <div key={habit.id} className="atmospheric-card p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              
+              {/* Habit Info & Streak */}
+              <div className="space-y-1">
+                <h3 className="font-medium text-sm text-white">{habit.title}</h3>
+                <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                  <span>Streak: <strong className={accent.text}>{streak} days</strong></span>
+                </div>
+              </div>
 
-              <div className="flex items-center gap-3">
-                <form action={toggleHabit}>
+              {/* 7-Day History Matrix Grid */}
+              <div className="flex items-center gap-2">
+                {pastDays.map(dateStr => {
+                  const isDone = completedDates.includes(dateStr);
+                  const dayLabel = new Date(dateStr).toLocaleDateString('en-US', { weekday: 'narrow' });
+                  
+                  return (
+                    <form key={dateStr} action={async () => {
+                      'use server';
+                      await toggleHabitDate(habit.id, dateStr, completedDates);
+                    }}>
+                      <button 
+                        type="submit"
+                        title={`${dateStr}: ${isDone ? 'Completed' : 'Missed'}`}
+                        className={`w-9 h-10 rounded-lg flex flex-col items-center justify-center text-[10px] font-mono border transition-all cursor-pointer ${
+                          isDone 
+                            ? `${accent.bg} ${accent.text}${accent.border} scale-105` 
+                            : 'bg-black/30 text-gray-500 border-gray-800/80 hover:border-gray-700'
+                        }`}
+                      >
+                        <span className="opacity-70">{dayLabel}</span>
+                        <span className="font-bold">{isDone ? '✓' : '·'}</span>
+                      </button>
+                    </form>
+                  );
+                })}
+
+                {/* Delete Button */}
+                <form action={deleteHabit} className="ml-3 pl-3 border-l border-gray-800">
                   <input type="hidden" name="habitId" value={habit.id} />
-                  <input type="hidden" name="currentState" value={String(isDone)} />
-                  <SubmitButton 
-                    defaultText={isDone ? 'Completed ✓' : 'Mark Done'} 
-                    loadingText="Saving..." 
-                    baseClass={`text-xs font-semibold px-4 py-2 rounded-lg border transition-colors w-28 ${
-                      isDone 
-                        ? 'bg-green-950/40 text-green-400 border-green-900/40 hover:bg-green-900/40' 
-                        : 'bg-gray-900 text-gray-300 border-gray-700 hover:bg-gray-800'
-                    }`}
-                  />
-                </form>
-
-                <form action={deleteHabit}>
-                  <input type="hidden" name="id" value={habit.id} />
-                  <SubmitButton 
-                    defaultText="Delete" 
-                    loadingText="..." 
-                    baseClass="text-red-400 hover:text-red-300 text-xs font-semibold px-3 py-2 bg-red-950/40 rounded-lg border border-red-900/40 transition-colors"
-                  />
+                  <button 
+                    type="submit" 
+                    className="text-gray-600 hover:text-rose-400 text-xs px-2 py-1 transition-colors cursor-pointer"
+                    title="Delete habit"
+                  >
+                    ✕
+                  </button>
                 </form>
               </div>
+
             </div>
           );
         })}
 
-        {habits?.length === 0 && (
-          <p className="text-gray-500 text-center py-12 border border-dashed border-gray-800 rounded-xl bg-[#111726]/50">
-            No habits created yet. Add your first daily routine above.
-          </p>
+        {(!habits || habits.length === 0) && (
+          <div className="atmospheric-card rounded-2xl py-16 text-center text-xs text-gray-500 space-y-2">
+            <p>No habits configured yet.</p>
+            <p className="text-gray-600">Add a daily habit above to start building consistency.</p>
+          </div>
         )}
       </div>
     </div>
