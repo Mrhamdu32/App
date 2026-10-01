@@ -29,8 +29,8 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen bg-[#0b0f19] text-white">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-gray-800 bg-[#0e131f] flex flex-col justify-between hidden md:flex">
+      {/* Sidebar - Frozen / Sticky */}
+      <aside className="w-64 border-r border-gray-800 bg-[#0e131f] flex flex-col justify-between hidden md:flex sticky top-0 h-screen">
         <div>
           {/* Logo / Brand */}
           <div className="h-16 flex items-center px-6 border-b border-gray-800">
