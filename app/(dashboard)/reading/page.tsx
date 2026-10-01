@@ -45,7 +45,6 @@ export default async function ReadingPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Insert book
     const { data: newBook, error } = await supabase.from('books').insert([{
       title,
       author,
@@ -57,7 +56,6 @@ export default async function ReadingPage() {
 
     if (error || !newBook) return;
 
-    // If initial note was provided, insert it into book_notes
     if (initialNote && initialNote.trim() !== '') {
       await supabase.from('book_notes').insert([{
         book_id: newBook.id,
@@ -190,39 +188,33 @@ export default async function ReadingPage() {
 
           return (
             <div key={book.id} className="bg-[#111726] border border-gray-800 p-6 rounded-xl flex flex-col justify-between space-y-4">
-              <div className="space-y-3">
-                <div className="flex justify-between items-start gap-2">
-                  <div>
-                    <h3 className="font-bold text-lg text-white">{book.title}</h3>
+              <div className="space-y-4">
+                {/* Book Header with Circular Progress */}
+                <div className="flex justify-between items-start gap-4">
+                  <div className="space-y-1">
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md uppercase tracking-wider inline-block ${
+                      book.status === 'completed' ? 'bg-green-950/60 text-green-400 border border-green-900/50' :
+                      book.status === 'reading' ? 'bg-purple-950/60 text-purple-400 border border-purple-900/50' :
+                      'bg-gray-800 text-gray-300'
+                    }`}>
+                      {book.status.replace('_', ' ')}
+                    </span>
+                    <h3 className="font-bold text-lg text-white mt-1">{book.title}</h3>
                     <p className="text-xs text-purple-400 font-medium">by {book.author}</p>
+                    <p className="text-xs text-gray-400 pt-1">Pages Read: {book.pages_read} / {book.total_pages}</p>
                   </div>
-                  <span className={`text-xs font-semibold px-2.5 py-1 rounded-md uppercase tracking-wider ${
-                    book.status === 'completed' ? 'bg-green-950/60 text-green-400 border border-green-900/50' :
-                    book.status === 'reading' ? 'bg-purple-950/60 text-purple-400 border border-purple-900/50' :
-                    'bg-gray-800 text-gray-300'
-                  }`}>
-                    {book.status.replace('_', ' ')}
-                  </span>
-                </div>
 
-                {/* Progress Bar & Stats */}
-                <div className="pt-2">
-                  <div className="flex justify-between text-xs text-gray-400 mb-1">
-                    <span>Progress: {book.pages_read} / {book.total_pages} pages</span>
-                    <span className="font-bold text-white">{percentage}%</span>
-                  </div>
-                  <div className="w-full bg-black rounded-full h-2 overflow-hidden border border-gray-800">
-                    <div 
-                      className="bg-purple-500 h-full transition-all duration-300" 
-                      style={{ width: `${percentage}%` }}
-                    ></div>
+                  {/* Circular Percentage Indicator */}
+                  <div className="relative w-14 h-14 flex items-center justify-center font-bold text-xs text-purple-400 shrink-0">
+                    <div className="absolute inset-0 rounded-full border-4 border-gray-800 border-t-purple-500"></div>
+                    {percentage}%
                   </div>
                 </div>
 
                 {/* Notes Stream Section */}
-                <div className="space-y-2 mt-2">
+                <div className="space-y-2 pt-2 border-t border-gray-800/60">
                   <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold block">Notes & Insights Stream</span>
-                  <div className="max-h-40 overflow-y-auto space-y-2 pr-1">
+                  <div className="max-h-36 overflow-y-auto space-y-2 pr-1">
                     {bookNotes.map((note) => (
                       <div key={note.id} className="bg-black/40 border border-gray-800/80 p-2.5 rounded-lg flex justify-between items-start gap-2">
                         <p className="text-xs text-gray-300 whitespace-pre-wrap flex-1">{note.content}</p>
@@ -239,7 +231,7 @@ export default async function ReadingPage() {
                 </div>
 
                 {/* Add New Note Form for this specific book */}
-                <form action={addNote} className="flex gap-2 pt-1">
+                <form action={addNote} className="flex gap-2">
                   <input type="hidden" name="book_id" value={book.id} />
                   <input 
                     type="text" 
