@@ -112,13 +112,13 @@ export default async function HabitsPage() {
       <div className="space-y-4">
         {habits?.map(habit => {
           const completedDates: string[] = habit.completed_dates || [];
+          const totalWins = completedDates.length;
           
-          // Calculate streak robustly (allows checking from today or yesterday)
+          // Calculate active consecutive streak ending today or yesterday
           let streak = 0;
           let checkDate = new Date();
           const todayStr = getLocalDateString(checkDate);
 
-          // If today isn't checked yet, check if yesterday was completed to start streak
           if (!completedDates.includes(todayStr)) {
             const yesterday = new Date();
             yesterday.setDate(checkDate.getDate() - 1);
@@ -140,11 +140,12 @@ export default async function HabitsPage() {
           return (
             <div key={habit.id} className="atmospheric-card p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               
-              {/* Habit Info & Streak */}
+              {/* Habit Info, Streak & Total Wins */}
               <div className="space-y-1">
                 <h3 className="font-medium text-sm text-white">{habit.title}</h3>
-                <div className="flex items-center gap-2 text-xs text-gray-400 font-mono">
+                <div className="flex items-center gap-4 text-xs text-gray-400 font-mono">
                   <span>Streak: <strong className={accent.text}>{streak} days</strong></span>
+                  <span>Total Wins: <strong className="text-white">{totalWins}</strong></span>
                 </div>
               </div>
 
