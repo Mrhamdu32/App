@@ -2,7 +2,6 @@ import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import '@/app/globals.css';
 
 export default async function DashboardLayout({
   children,
@@ -59,10 +58,10 @@ export default async function DashboardLayout({
 
   return (
     <div className={`min-h-screen ${currentTheme.main} text-gray-200 flex`}>
-      {/* Sidebar */}
-      <div className={`w-64 ${currentTheme.sidebar} border-r ${currentTheme.border} flex flex-col min-h-screen`}>
+      {/* Locked Sticky Sidebar */}
+      <aside className={`w-64 ${currentTheme.sidebar} border-r ${currentTheme.border} flex flex-col h-screen sticky top-0 shrink-0 select-none overflow-y-auto`}>
         {/* Logo / Brand */}
-        <div className={`h-16 flex items-center px-6 border-b ${currentTheme.border}`}>
+        <div className={`h-16 flex items-center px-6 border-b ${currentTheme.border} shrink-0`}>
           <span className={`text-xl font-bold bg-gradient-to-r ${activeGradient} bg-clip-text text-transparent`}>
             LifeOS
           </span>
@@ -97,16 +96,16 @@ export default async function DashboardLayout({
         </nav>
 
         {/* Settings at Bottom */}
-        <div className={`p-4 border-t ${currentTheme.border}`}>
+        <div className={`p-4 border-t ${currentTheme.border} shrink-0`}>
           <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium">
             <span>⚙</span> Settings
           </Link>
         </div>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className={`h-16 border-b ${currentTheme.border} ${currentTheme.sidebar}/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-10`}>
+        <header className={`h-16 border-b ${currentTheme.border} ${currentTheme.sidebar}/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-20`}>
           <div className="flex items-center gap-4">
             <span className="text-xs font-mono text-gray-400">
               {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
