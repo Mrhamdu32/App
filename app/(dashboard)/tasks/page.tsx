@@ -1,217 +1,167 @@
 import { createClient } from '@/utils/supabase/server';
-import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { SubmitButton } from '../../components/SubmitButton';
-import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
 
-export default async function TasksPage({ 
-  searchParams 
-}: { 
-  searchParams: { status?: string, time?: string } 
-}) {
+export default async function TasksPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     redirect('/login');
   }
 
-  // 1. Start the query: Only fetch this user's data
-  let query = supabase.from('tasks').select('*').eq('user_id', user.id);
+  // Fetch tasks for the current user
+  const { data: tasks, error } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
 
-  // 2. Apply Status Filter from URL
-  if (searchParams.status === 'completed') {
-    query = query.eq('status', 'completed');
-  } else if (searchParams.status === 'pending') {
-    query = query.eq('status', 'todo');
-  }
-
-  // 3. Apply Time Horizon Filter from URL
-  const today = new Date().toISOString().split('T')[0]; // Grabs YYYY-MM-DD
-  if (searchParams.time === 'today') {
-    query = query.eq('due_date', today);
-  } else if (searchParams.time === 'upcoming') {
-    query = query.gt('due_date', today);
-  } else if (searchParams.time === 'someday') {
-    query = query.is('due_date', null);
-  }
-
-  // 4. Finalize sorting and execute
-  query = query.order('due_date', { ascending: true, nullsFirst: false }).order('created_at', { ascending: false });
-  const { data: tasks } = await query;
-
-  // Helper to build bookmarkable URL query strings without dropping existing filters
-  const buildQuery = (key: string, value: string) => {
-    const params = new URLSearchParams();
-    if (searchParams.status) params.set('status', searchParams.status);
-    if (searchParams.time) params.set('time', searchParams.time);
-    
-    if (value === 'all') {
-      params.delete(key);
-    } else {
-      params.set(key, value);
-    }
-    
-    const queryString = params.toString();
-    return queryString ? `/tasks?${queryString}` : '/tasks';
-  };
-
+  // Server Action: Create Task
   async function addTask(formData: FormData) {
     'use server';
-    const title = formData.get('title') as string;
-    const priority = formData.get('priority') as string;
-    const dueDate = formData.get('due_date') as string;
+    const title = formData.get('title')?.toString();
+    const priority = formData.get('priority')?.toString() || 'medium';
     
-    if (!title) return;
-    
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    
-    const { error } = await supabase.from('tasks').insert([{ 
-      title,
+    if (!title || title.trim() === '') return;
+
+    const supabaseClient = await createClient();
+    const { data: { user: currentUser } } = await supabaseClient.auth.getUser();
+    if (!currentUser) return;
+
+    await supabaseClient.from('tasks').insert({
+      user_id: currentUser.id,
+      title: title.trim(),
       priority,
-      due_date: dueDate || null,
-      user_id: user.id
-    }]);
-    
-    if (error) console.error("Insert error:", error);
+      completed: false,
+    });
+
     revalidatePath('/tasks');
   }
 
-  async function deleteTask(formData: FormData) {
+  // Server Action: Toggle Task Completion
+  async function toggleTask(taskId: string, currentStatus: boolean) {
     'use server';
-    const id = formData.get('id') as string;
-    if (!id) return;
-    
-    const supabase = await createClient();
-    const { error } = await supabase.from('tasks').delete().eq('id', id);
-    if (error) console.error("Delete error:", error);
+    const supabaseClient = await createClient();
+    await supabaseClient
+      .from('tasks')
+      .update({ completed: !currentStatus })
+      .eq('id', taskId);
+
     revalidatePath('/tasks');
   }
 
-  async function toggleStatus(formData: FormData) {
+  // Server Action: Delete Task
+  async function deleteTask(taskId: string) {
     'use server';
-    const id = formData.get('id') as string;
-    const currentStatus = formData.get('currentStatus') as string;
-    if (!id) return;
-    
-    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed';
-    const supabase = await createClient();
-    const { error } = await supabase.from('tasks').update({ status: newStatus }).eq('id', id);
-    if (error) console.error("Update error:", error);
+    const supabaseClient = await createClient();
+    await supabaseClient
+      .from('tasks')
+      .delete()
+      .eq('id', taskId);
+
     revalidatePath('/tasks');
   }
+
+  const priorityColors: Record<string, string> = {
+    high: 'text-rose-400 border-rose-500/20 bg-rose-500/10',
+    medium: 'text-amber-400 border-amber-500/20 bg-amber-500/10',
+    low: 'text-blue-400 border-blue-500/20 bg-blue-500/10',
+  };
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Task Manager</h1>
-      </div>
+    <div className="max-w-4xl mx-auto space-y-8 pb-16">
       
-      {/* Input Form */}
-      <form action={addTask} className="flex flex-col sm:flex-row gap-4 mb-8 bg-[#111726] p-4 rounded-xl border border-gray-800">
+      {/* Header Banner */}
+      <div className="atmospheric-card p-6 rounded-2xl flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Task Queue</h1>
+          <p className="text-xs text-gray-400 mt-1">Manage, prioritize, and execute your operational backlog.</p>
+        </div>
+        <div className="text-xs font-mono text-purple-400 bg-purple-500/10 px-3 py-1.5 rounded-lg border border-purple-500/20">
+          {tasks?.filter(t => !t.completed).length || 0} Pending
+        </div>
+      </div>
+
+      {/* Add Task Form */}
+      <form action={addTask} className="atmospheric-card p-4 rounded-xl flex gap-3 items-center">
         <input 
           type="text" 
           name="title" 
-          placeholder="What needs to be done?" 
+          placeholder="What needs to be executed next..." 
           required
-          className="flex-1 bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-purple-500 text-sm"
-          autoComplete="off"
+          className="flex-1 bg-black/40 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 transition-colors"
         />
         <select 
           name="priority" 
           defaultValue="medium"
-          className="bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-purple-500 cursor-pointer text-sm"
+          className="bg-black/40 border border-gray-800 rounded-lg px-3 py-2.5 text-sm text-gray-300 focus:outline-none focus:border-purple-500/50 transition-colors"
         >
-          <option value="low">Low Priority</option>
-          <option value="medium">Medium Priority</option>
-          <option value="high">High Priority</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
         </select>
-        <input 
-          type="date" 
-          name="due_date"
-          className="bg-black border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-purple-500 cursor-pointer [color-scheme:dark] text-sm"
-        />
-        <SubmitButton 
-          defaultText="Add Task" 
-          loadingText="Adding..." 
-          baseClass="bg-purple-600 hover:bg-purple-700 px-6 py-2.5 rounded-lg font-semibold transition-colors text-sm"
-        />
+        <button 
+          type="submit"
+          className="bg-gradient-to-r from-purple-500 to-blue-600 text-white font-medium text-sm px-5 py-2.5 rounded-lg hover:opacity-90 transition-opacity shrink-0"
+        >
+          Add Task
+        </button>
       </form>
-
-      {/* URL-Based Filters */}
-      <div className="flex flex-col sm:flex-row gap-6 mb-6 p-4 bg-[#111726] rounded-xl border border-gray-800 text-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 mr-2 font-semibold uppercase tracking-wider text-xs">Status</span>
-          <Link href={buildQuery('status', 'all')} className={`px-3 py-1.5 rounded-lg transition-colors ${!searchParams.status || searchParams.status === 'all' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>All</Link>
-          <Link href={buildQuery('status', 'pending')} className={`px-3 py-1.5 rounded-lg transition-colors ${searchParams.status === 'pending' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>Pending</Link>
-          <Link href={buildQuery('status', 'completed')} className={`px-3 py-1.5 rounded-lg transition-colors ${searchParams.status === 'completed' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>Completed</Link>
-        </div>
-        
-        <div className="hidden sm:block w-px bg-gray-800"></div>
-        
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 mr-2 font-semibold uppercase tracking-wider text-xs">Time</span>
-          <Link href={buildQuery('time', 'all')} className={`px-3 py-1.5 rounded-lg transition-colors ${!searchParams.time || searchParams.time === 'all' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>All</Link>
-          <Link href={buildQuery('time', 'today')} className={`px-3 py-1.5 rounded-lg transition-colors ${searchParams.time === 'today' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>Today</Link>
-          <Link href={buildQuery('time', 'upcoming')} className={`px-3 py-1.5 rounded-lg transition-colors ${searchParams.time === 'upcoming' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>Upcoming</Link>
-          <Link href={buildQuery('time', 'someday')} className={`px-3 py-1.5 rounded-lg transition-colors ${searchParams.time === 'someday' ? 'bg-purple-900/50 text-purple-200 border border-purple-500/20' : 'text-gray-400 hover:bg-gray-800'}`}>Someday</Link>
-        </div>
-      </div>
 
       {/* Task List */}
       <div className="space-y-3">
+        {error && (
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm">
+            Failed to load tasks. Verify your Supabase table schema.
+          </div>
+        )}
+
+        {tasks?.length === 0 && (
+          <div className="atmospheric-card p-12 rounded-xl text-center space-y-2">
+            <span className="text-2xl">📝</span>
+            <p className="text-sm text-gray-400">Your task queue is completely clear.</p>
+          </div>
+        )}
+
         {tasks?.map((task) => (
-          <div key={task.id} className="bg-[#111726] p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between border border-gray-800 gap-4">
-            <div className="flex flex-col">
-              <span className={`text-base ${task.status === 'completed' ? 'line-through text-gray-500' : 'text-white font-medium'}`}>
+          <div 
+            key={task.id} 
+            className={`atmospheric-card p-4 rounded-xl flex items-center justify-between gap-4 transition-all ${task.completed ? 'opacity-50' : ''}`}
+          >
+            <div className="flex items-center gap-3.5 min-w-0">
+              <form action={toggleTask.bind(null, task.id, task.completed)}>
+                <button 
+                  type="submit" 
+                  className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${task.completed ? 'bg-purple-600 border-purple-500 text-white' : 'border-gray-700 hover:border-gray-500 bg-black/20'}`}
+                >
+                  {task.completed && <span className="text-xs">✓</span>}
+                </button>
+              </form>
+              <span className={`text-sm text-white truncate ${task.completed ? 'line-through text-gray-500' : ''}`}>
                 {task.title}
               </span>
-              <div className="flex items-center gap-3 mt-2 text-xs">
-                <span className={`px-2 py-0.5 rounded font-medium border ${
-                  task.priority === 'high' ? 'bg-red-950/50 text-red-400 border-red-900/50' : 
-                  task.priority === 'low' ? 'bg-gray-900 text-gray-400 border-gray-800' : 
-                  'bg-yellow-950/50 text-yellow-400 border-yellow-900/50'
-                }`}>
-                  {task.priority ? task.priority.toUpperCase() : 'MEDIUM'}
-                </span>
-                {task.due_date && (
-                  <span className="text-purple-300 flex items-center gap-1">
-                    📅 {new Date(task.due_date).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
             </div>
-            
-            <div className="flex gap-2">
-              <form action={toggleStatus}>
-                <input type="hidden" name="id" value={task.id} />
-                <input type="hidden" name="currentStatus" value={task.status || 'todo'} />
-                <SubmitButton 
-                  defaultText={task.status === 'completed' ? 'Undo' : 'Complete'} 
-                  loadingText="Wait..." 
-                  baseClass="text-green-400 hover:text-green-300 text-xs font-semibold px-4 py-2 bg-green-950/40 rounded-lg border border-green-900/40 transition-colors w-24"
-                />
-              </form>
-              
-              <form action={deleteTask}>
-                <input type="hidden" name="id" value={task.id} />
-                <SubmitButton 
-                  defaultText="Delete" 
-                  loadingText="Wait..." 
-                  baseClass="text-red-400 hover:text-red-300 text-xs font-semibold px-4 py-2 bg-red-950/40 rounded-lg border border-red-900/40 transition-colors w-20"
-                />
+
+            <div className="flex items-center gap-3 shrink-0">
+              <span className={`text-[10px] font-mono uppercase px-2.5 py-1 rounded-full border ${priorityColors[task.priority] || priorityColors.medium}`}>
+                {task.priority}
+              </span>
+
+              <form action={deleteTask.bind(null, task.id)}>
+                <button 
+                  type="submit" 
+                  className="text-gray-500 hover:text-rose-400 text-xs px-2 py-1 transition-colors"
+                  title="Delete task"
+                >
+                  ✕
+                </button>
               </form>
             </div>
           </div>
         ))}
-        {tasks?.length === 0 && (
-          <p className="text-gray-500 text-center py-12 border border-dashed border-gray-800 rounded-xl bg-[#111726]/50">
-            No tasks match your current filters.
-          </p>
-        )}
       </div>
+
     </div>
   );
 }
