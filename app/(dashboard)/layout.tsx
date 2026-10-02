@@ -1,8 +1,14 @@
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
+import '@/app/globals.css';
 
-export default async function DashboardPage() {
+export default async function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -10,91 +16,117 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  // Fetch quick metrics
-  const { count: tasksCount } = await supabase
-    .from('tasks')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('completed', false);
+  const cookieStore = await cookies();
+  const accent = cookieStore.get('lifeos_accent')?.value || 'purple';
+  const bgTheme = cookieStore.get('lifeos_bg')?.value || 'midnight';
 
-  const { count: projectsCount } = await supabase
-    .from('projects')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('status', 'in_progress');
+  const accentGradients: Record<string, string> = {
+    purple: 'from-purple-400 to-blue-500',
+    blue: 'from-blue-400 to-cyan-500',
+    emerald: 'from-emerald-400 to-teal-500',
+    rose: 'from-rose-400 to-orange-500',
+  };
 
-  const { count: readingCount } = await supabase
-    .from('reading')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .eq('status', 'reading');
+  const backgroundThemes: Record<string, { main: string; sidebar: string; card: string; border: string }> = {
+    midnight: {
+      main: 'bg-[#0b0f19]',
+      sidebar: 'bg-[#0e131f]',
+      card: 'bg-[#111726]/80',
+      border: 'border-gray-800',
+    },
+    oled: {
+      main: 'bg-black',
+      sidebar: 'bg-[#050505]',
+      card: 'bg-[#0a0a0a]',
+      border: 'border-neutral-900',
+    },
+    slate: {
+      main: 'bg-[#0f172a]',
+      sidebar: 'bg-[#1e293b]/50',
+      card: 'bg-[#1e293b]/80',
+      border: 'border-slate-800',
+    },
+    espresso: {
+      main: 'bg-[#12100e]',
+      sidebar: 'bg-[#181512]',
+      card: 'bg-[#1c1815]',
+      border: 'border-[#2a2421]',
+    },
+  };
+
+  const activeGradient = accentGradients[accent] || accentGradients.purple;
+  const currentTheme = backgroundThemes[bgTheme] || backgroundThemes.midnight;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-16">
-      
-      {/* Top Status Banner */}
-      <div className="atmospheric-card p-6 rounded-2xl flex justify-between items-center">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400">System Operational</span>
+    <div className={`flex min-h-screen ${currentTheme.main} text-gray-200`}>
+      {/* Sidebar - Locked and Visible */}
+      <aside className={`w-64 border-r ${currentTheme.border} ${currentTheme.sidebar} flex flex-col justify-between shrink-0 sticky top-0 h-screen`}>
+        <div>
+          {/* Logo / Brand */}
+          <div className={`h-16 flex items-center px-6 border-b ${currentTheme.border}`}>
+            <span className={`text-xl font-bold bg-gradient-to-r ${activeGradient} bg-clip-text text-transparent`}>
+              LifeOS
+            </span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Command Center</h1>
+
+          {/* Navigation Links */}
+          <nav className="p-4 space-y-1.5 text-sm font-medium">
+            <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>📊</span> Dashboard
+            </Link>
+            <Link href="/tasks" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>📝</span> Tasks
+            </Link>
+            <Link href="/habits" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>🔥</span> Habits
+            </Link>
+            <Link href="/goals" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>🎯</span> Goals
+            </Link>
+            <Link href="/reading" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>📖</span> Reading
+            </Link>
+            <Link href="/projects" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>📁</span> Projects
+            </Link>
+            <Link href="/notes" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>📓</span> Notes
+            </Link>
+            <Link href="/finance" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
+              <span>💳</span> Finance
+            </Link>
+          </nav>
         </div>
-        <div className="text-right font-mono text-xs text-gray-400">
-          NODE: <span className="text-white">admin</span>
+
+        {/* Bottom User / Settings Section */}
+        <div className={`p-4 border-t ${currentTheme.border}`}>
+          <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium">
+            <span>⚙</span> Settings
+          </Link>
         </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header */}
+        <header className={`h-16 border-b ${currentTheme.border} ${currentTheme.sidebar}/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-10`}>
+          <div className="flex items-center gap-4">
+            <span className="text-xs font-mono text-gray-400">
+              {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className={`w-8 h-8 rounded-full bg-gradient-to-tr ${activeGradient} flex items-center justify-center font-bold text-xs text-white`}>
+              H
+            </div>
+          </div>
+        </header>
+
+        {/* Page Viewport */}
+        <main className="flex-1 p-8 overflow-y-auto">
+          {children}
+        </main>
       </div>
-
-      {/* Metric Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <div className="atmospheric-card p-5 rounded-xl space-y-3">
-          <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-wider">
-            <span>Net Balance</span>
-            <span>💳</span>
-          </div>
-          <div className="text-2xl font-semibold text-white">₹0</div>
-          <Link href="/finance" className="text-xs text-purple-400 hover:underline block">
-            View ledger →
-          </Link>
-        </div>
-
-        <div className="atmospheric-card p-5 rounded-xl space-y-3">
-          <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-wider">
-            <span>Pending Tasks</span>
-            <span>📝</span>
-          </div>
-          <div className="text-2xl font-semibold text-white">{tasksCount || 0}</div>
-          <Link href="/tasks" className="text-xs text-purple-400 hover:underline block">
-            Task queue →
-          </Link>
-        </div>
-
-        <div className="atmospheric-card p-5 rounded-xl space-y-3">
-          <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-wider">
-            <span>Active Projects</span>
-            <span>📁</span>
-          </div>
-          <div className="text-2xl font-semibold text-white">{projectsCount || 0}</div>
-          <Link href="/projects" className="text-xs text-purple-400 hover:underline block">
-            Initiatives →
-          </Link>
-        </div>
-
-        <div className="atmospheric-card p-5 rounded-xl space-y-3">
-          <div className="flex justify-between items-center text-xs font-mono text-gray-400 uppercase tracking-wider">
-            <span>Reading Focus</span>
-            <span>📖</span>
-          </div>
-          <div className="text-2xl font-semibold text-white">{readingCount || 0} active</div>
-          <Link href="/reading" className="text-xs text-purple-400 hover:underline block">
-            Library →
-          </Link>
-        </div>
-
-      </div>
-
     </div>
   );
 }
