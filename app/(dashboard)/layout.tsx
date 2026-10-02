@@ -58,57 +58,54 @@ export default async function DashboardLayout({
   const currentTheme = backgroundThemes[bgTheme] || backgroundThemes.midnight;
 
   return (
-    <div className={`flex min-h-screen ${currentTheme.main} text-gray-200`}>
-      {/* Sidebar - Locked and Visible */}
-      <aside className={`w-64 border-r ${currentTheme.border} ${currentTheme.sidebar} flex flex-col justify-between shrink-0 sticky top-0 h-screen`}>
-        <div>
-          {/* Logo / Brand */}
-          <div className={`h-16 flex items-center px-6 border-b ${currentTheme.border}`}>
-            <span className={`text-xl font-bold bg-gradient-to-r ${activeGradient} bg-clip-text text-transparent`}>
-              LifeOS
-            </span>
-          </div>
-
-          {/* Navigation Links */}
-          <nav className="p-4 space-y-1.5 text-sm font-medium">
-            <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>📊</span> Dashboard
-            </Link>
-            <Link href="/tasks" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>📝</span> Tasks
-            </Link>
-            <Link href="/habits" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>🔥</span> Habits
-            </Link>
-            <Link href="/goals" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>🎯</span> Goals
-            </Link>
-            <Link href="/reading" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>📖</span> Reading
-            </Link>
-            <Link href="/projects" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>📁</span> Projects
-            </Link>
-            <Link href="/notes" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>📓</span> Notes
-            </Link>
-            <Link href="/finance" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors">
-              <span>💳</span> Finance
-            </Link>
-          </nav>
+    <div className={`min-h-screen ${currentTheme.main} text-gray-200 flex`}>
+      {/* Sidebar */}
+      <div className={`w-64 ${currentTheme.sidebar} border-r ${currentTheme.border} flex flex-col min-h-screen`}>
+        {/* Logo / Brand */}
+        <div className={`h-16 flex items-center px-6 border-b ${currentTheme.border}`}>
+          <span className={`text-xl font-bold bg-gradient-to-r ${activeGradient} bg-clip-text text-transparent`}>
+            LifeOS
+          </span>
         </div>
 
-        {/* Bottom User / Settings Section */}
+        {/* Navigation Links */}
+        <nav className="flex-1 p-4 space-y-1.5 text-sm font-medium">
+          <Link href="/" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>📊</span> Dashboard
+          </Link>
+          <Link href="/tasks" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>📝</span> Tasks
+          </Link>
+          <Link href="/habits" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>🔥</span> Habits
+          </Link>
+          <Link href="/goals" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>🎯</span> Goals
+          </Link>
+          <Link href="/reading" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>📖</span> Reading
+          </Link>
+          <Link href="/projects" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>📁</span> Projects
+          </Link>
+          <Link href="/notes" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>📓</span> Notes
+          </Link>
+          <Link href="/finance" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors">
+            <span>💳</span> Finance
+          </Link>
+        </nav>
+
+        {/* Settings at Bottom */}
         <div className={`p-4 border-t ${currentTheme.border}`}>
-          <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium">
+          <Link href="/settings" className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition-colors text-sm font-medium">
             <span>⚙</span> Settings
           </Link>
         </div>
-      </aside>
+      </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
         <header className={`h-16 border-b ${currentTheme.border} ${currentTheme.sidebar}/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-10`}>
           <div className="flex items-center gap-4">
             <span className="text-xs font-mono text-gray-400">
@@ -122,7 +119,6 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        {/* Page Viewport */}
         <main className="flex-1 p-8 overflow-y-auto">
           {children}
         </main>
